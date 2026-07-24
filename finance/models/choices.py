@@ -6,3 +6,8 @@ class Currency(models.TextChoices):
     UAH = "UAH", _("Ukrainian Hryvnia")
     USD = "USD", _("US Dollar")
     EUR = "EUR", _("Euro")
+
+
+class CategoryType(models.TextChoices):
+    INCOME  = "INCOME", _("Income")
+    EXPENSE = "EXPENSE", _("Expense")
