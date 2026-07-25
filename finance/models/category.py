@@ -27,7 +27,7 @@ class Category(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "name"],
+                fields=["user", "name","type"],
                 name="unique_category_name_per_user",
             )
         ]
