@@ -14,6 +14,6 @@ class ReportViewSet(GenericViewSet):
             user=request.user,
         )
 
-        serializer = ReportSerializer(data)
+        serializer = ReportSerializer(instance = тdata)
 
         return Response(serializer.data)
