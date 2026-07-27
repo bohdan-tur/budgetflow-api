@@ -72,7 +72,8 @@ class ReportService:
                 wallet__user=user,
                 category__type=CategoryType.EXPENSE,
             )
-            .values(category=F("category__name"))
+            .annotate(category_name=F("category__name"))
+            .values("category_name")
             .annotate(total=Sum("amount"))
         )
 
@@ -83,7 +84,8 @@ class ReportService:
                 wallet__user=user,
                 category__type=CategoryType.INCOME,
             )
-            .values(category=F("category__name"))
+            .annotate(category_name=F("category__name"))
+            .values("category_name")
             .annotate(total=Sum("amount"))
         )
 
@@ -138,7 +140,8 @@ class ReportService:
                 wallet__user=user,
                 category__type=CategoryType.EXPENSE,
             )
-            .values(category=F("category__name"))
+            .annotate(category_name=F("category__name"))
+            .values("category_name")
             .annotate(total=Sum("amount"))
             .order_by("-total")[:limit]
         )
