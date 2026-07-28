@@ -2,31 +2,18 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from finance.models.choices import CategoryType
 from tests.factories import CategoryFactory
 
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-
-@pytest.fixture
-def auth_client(user):
-    client = APIClient()
-    client.force_authenticate(user=user)
-    return client
-
-
-def test_get_category_list(auth_client, user):
-    category = CategoryFactory(user=user)
-
+def test_get_category_list(auth_client, income_category):
     response = auth_client.get("/api/categories/")
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 1
-    assert response.data[0]["id"] == category.id
+    assert response.data[0]["id"] == income_category.id
 
 
 def test_get_category_list_returns_only_user_categories(auth_client, user):
@@ -39,15 +26,13 @@ def test_get_category_list_returns_only_user_categories(auth_client, user):
     assert len(response.data) == 1
 
 
-def test_get_category_detail(auth_client, user):
-    category = CategoryFactory(user=user)
-
-    response = auth_client.get(f"/api/categories/{category.id}/")
+def test_get_category_detail(auth_client, income_category):
+    response = auth_client.get(f"/api/categories/{income_category.id}/")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.data["id"] == category.id
-    assert response.data["name"] == category.name
-    assert response.data["type"] == category.type
+    assert response.data["id"] == income_category.id
+    assert response.data["name"] == income_category.name
+    assert response.data["type"] == income_category.type
 
 
 def test_get_category_detail_other_user(auth_client):
@@ -61,7 +46,7 @@ def test_get_category_detail_other_user(auth_client):
 def test_create_category(auth_client):
     payload = {
         "name": "Salary",
-        "type": "INCOME",
+        "type": CategoryType.INCOME,
     }
 
     response = auth_client.post(
@@ -72,12 +57,12 @@ def test_create_category(auth_client):
 
     assert response.status_code == status.HTTP_201_CREATED
     assert response.data["name"] == "Salary"
-    assert response.data["type"] == "INCOME"
+    assert response.data["type"] == CategoryType.INCOME
 
 
 def test_create_category_invalid_data(auth_client):
     payload = {
-        "type": "INCOME",
+        "type": CategoryType.INCOME,
     }
 
     response = auth_client.post(
@@ -89,21 +74,19 @@ def test_create_category_invalid_data(auth_client):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
-def test_update_category(auth_client, user):
-    category = CategoryFactory(user=user)
-
+def test_update_category(auth_client, income_category):
     response = auth_client.patch(
-        f"/api/categories/{category.id}/",
+        f"/api/categories/{income_category.id}/",
         {
             "name": "Updated",
         },
         format="json",
     )
 
-    category.refresh_from_db()
+    income_category.refresh_from_db()
 
     assert response.status_code == status.HTTP_200_OK
-    assert category.name == "Updated"
+    assert income_category.name == "Updated"
 
 
 def test_update_other_user_category(auth_client):
@@ -120,11 +103,9 @@ def test_update_other_user_category(auth_client):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_category(auth_client, user):
-    category = CategoryFactory(user=user)
-
+def test_delete_category(auth_client, expense_category):
     response = auth_client.delete(
-        f"/api/categories/{category.id}/"
+        f"/api/categories/{expense_category.id}/"
     )
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -151,7 +132,7 @@ def test_unauthorized_create_category(api_client):
         "/api/categories/",
         {
             "name": "Salary",
-            "type": "INCOME",
+            "type": CategoryType.INCOME,
         },
         format="json",
     )
