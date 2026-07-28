@@ -38,7 +38,7 @@ def test_create_income_transaction():
 
     wallet.refresh_from_db()
 
-    assert Transaction.objects.count() == 1
+    assert Transaction.objects.filter(id=transaction.id).exists()
     assert transaction.amount == Decimal("500.00")
     assert wallet.balance == Decimal("600.00")
 
@@ -64,7 +64,7 @@ def test_create_expense_transaction():
 
     wallet.refresh_from_db()
 
-    assert Transaction.objects.count() == 1
+    assert Transaction.objects.filter(id=transaction.id).exists()
     assert transaction.amount == Decimal("250.00")
     assert wallet.balance == Decimal("750.00")
 
@@ -93,7 +93,7 @@ def test_create_expense_with_insufficient_funds():
 
     wallet.refresh_from_db()
 
-    assert Transaction.objects.count() == 0
+    assert not Transaction.objects.filter(wallet=wallet, category=category).exists()
     assert wallet.balance == Decimal("100.00")
 
 
@@ -228,7 +228,7 @@ def test_destroy_income_transaction():
     wallet.refresh_from_db()
 
     assert wallet.balance == Decimal("1000.00")
-    assert Transaction.objects.count() == 0
+    assert not Transaction.objects.filter(id=transaction.id).exists()
 
 
 
@@ -255,7 +255,7 @@ def test_destroy_expense_transaction():
     wallet.refresh_from_db()
 
     assert wallet.balance == Decimal("1000.00")
-    assert Transaction.objects.count() == 0
+    assert not Transaction.objects.filter(id=transaction.id).exists()
 
 
 

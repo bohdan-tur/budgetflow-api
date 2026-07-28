@@ -36,6 +36,11 @@ class TransferService:
         from_wallet = wallets[unlocked_from_wallet.id]
         to_wallet = wallets[unlocked_to_wallet.id]
 
+        if from_wallet.id == to_wallet.id:
+            raise ValidationError(
+                "Cannot transfer to the same wallet."
+            )
+
         if from_wallet.balance < amount:
             raise ValidationError(
                 "Insufficient funds."

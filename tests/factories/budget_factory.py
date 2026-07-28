@@ -1,9 +1,11 @@
 from decimal import Decimal
-from datetime import date, timedelta
+from datetime import timedelta
 
 import factory
+from django.utils import timezone
 
 from finance.models import Budget
+from finance.models.choices import CategoryType
 
 from .category_factory import CategoryFactory
 from .user_factory import UserFactory
@@ -14,9 +16,19 @@ class BudgetFactory(factory.django.DjangoModelFactory):
         model = Budget
 
     user = factory.SubFactory(UserFactory)
-    category = factory.SubFactory(CategoryFactory)
+
+    category = factory.SubFactory(
+        CategoryFactory,
+        user=factory.SelfAttribute("..user"),
+        type=CategoryType.EXPENSE,
+    )
 
     amount = Decimal("1000.00")
 
-    start_date = date.today()
-    end_date = date.today() + timedelta(days=30)
+    start_date = factory.LazyFunction(
+        timezone.localdate,
+    )
+
+    end_date = factory.LazyFunction(
+        lambda: timezone.localdate() + timedelta(days=30),
+    )
