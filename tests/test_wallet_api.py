@@ -7,21 +7,9 @@ from tests.factories import WalletFactory
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
-def api_client():
-    return APIClient()
 
 
-@pytest.fixture
-def auth_client(user):
-    client = APIClient()
-    client.force_authenticate(user=user)
-    return client
-
-
-def test_get_wallet_list(auth_client, user):
-    wallet = WalletFactory(user=user)
-
+def test_get_wallet_list(auth_client, wallet):
     response = auth_client.get("/api/wallets/")
 
     assert response.status_code == status.HTTP_200_OK
@@ -39,9 +27,7 @@ def test_get_wallet_list_returns_only_user_wallets(auth_client, user):
     assert len(response.data) == 1
 
 
-def test_get_wallet_detail(auth_client, user):
-    wallet = WalletFactory(user=user)
-
+def test_get_wallet_detail(auth_client, wallet):
     response = auth_client.get(f"/api/wallets/{wallet.id}/")
 
     assert response.status_code == status.HTTP_200_OK
@@ -89,9 +75,7 @@ def test_create_wallet_invalid_data(auth_client):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
-def test_update_wallet(auth_client, user):
-    wallet = WalletFactory(user=user)
-
+def test_update_wallet(auth_client, wallet):
     payload = {
         "name": "Updated Wallet",
     }
@@ -122,9 +106,7 @@ def test_update_other_user_wallet(auth_client):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_wallet(auth_client, user):
-    wallet = WalletFactory(user=user)
-
+def test_delete_wallet(auth_client, wallet):
     response = auth_client.delete(
         f"/api/wallets/{wallet.id}/"
     )
