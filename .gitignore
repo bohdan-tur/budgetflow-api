@@ -31,3 +31,4 @@ celerybeat-schedule
 celerybeat.pid
 postgres_data/
 redis_data/
+tests/pytest-cache-files-*
