@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from finance.models.category import Category
 
+from finance.models.category import Category
 
 
 class CategorySerializer(serializers.ModelSerializer):

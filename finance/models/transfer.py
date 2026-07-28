@@ -1,10 +1,7 @@
-from django.db import models
-
-
-
-from django.db import models
 from decimal import Decimal
+
 from django.core.validators import MinValueValidator
+from django.db import models
 
 from .wallet import Wallet
 
@@ -48,8 +45,4 @@ class Transfer(models.Model):
         verbose_name_plural = "Transfers"
 
     def __str__(self):
-        return (
-            f"{self.from_wallet.name} → "
-            f"{self.to_wallet.name}: "
-            f"{self.amount}"
-        )
+        return f"{self.from_wallet.name} → {self.to_wallet.name}: {self.amount}"

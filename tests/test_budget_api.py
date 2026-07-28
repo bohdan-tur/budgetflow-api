@@ -38,9 +38,7 @@ def test_get_budget_detail(auth_client, budget):
 def test_get_budget_detail_other_user(auth_client):
     budget = BudgetFactory()
 
-    response = auth_client.get(
-        f"/api/budgets/{budget.id}/"
-    )
+    response = auth_client.get(f"/api/budgets/{budget.id}/")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -155,9 +153,7 @@ def test_update_nonexistent_budget(auth_client):
 def test_delete_budget(auth_client, budget):
     budget_id = budget.id
 
-    response = auth_client.delete(
-        f"/api/budgets/{budget_id}/"
-    )
+    response = auth_client.delete(f"/api/budgets/{budget_id}/")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert not Budget.objects.filter(id=budget_id).exists()
@@ -166,17 +162,13 @@ def test_delete_budget(auth_client, budget):
 def test_delete_other_user_budget(auth_client):
     budget = BudgetFactory()
 
-    response = auth_client.delete(
-        f"/api/budgets/{budget.id}/"
-    )
+    response = auth_client.delete(f"/api/budgets/{budget.id}/")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 def test_delete_nonexistent_budget(auth_client):
-    response = auth_client.delete(
-        "/api/budgets/99999/"
-    )
+    response = auth_client.delete("/api/budgets/99999/")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 

@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Any
+
 from django.db import transaction
 from django.db.models import F
 from rest_framework.exceptions import ValidationError
@@ -11,7 +12,6 @@ from finance.models.wallet import Wallet
 
 
 class TransactionService:
-
     @staticmethod
     def _get_delta(category: Category, amount: Decimal) -> Decimal:
         if category.type == CategoryType.INCOME:
@@ -24,9 +24,7 @@ class TransactionService:
     @staticmethod
     def _update_wallet_balance(*, wallet_id: int, delta: Decimal) -> None:
         if delta != Decimal("0.00"):
-            Wallet.objects.filter(id=wallet_id).update(
-                balance=F("balance") + delta
-            )
+            Wallet.objects.filter(id=wallet_id).update(balance=F("balance") + delta)
 
     @staticmethod
     @transaction.atomic
@@ -51,9 +49,9 @@ class TransactionService:
     @staticmethod
     @transaction.atomic
     def update(
-            *,
-            instance: Transaction,
-            validated_data: dict[str, Any],
+        *,
+        instance: Transaction,
+        validated_data: dict[str, Any],
     ) -> Transaction:
         old_wallet = Wallet.objects.select_for_update().get(id=instance.wallet_id)
 
@@ -75,7 +73,9 @@ class TransactionService:
         else:
             new_wallet = Wallet.objects.select_for_update().get(id=new_wallet_id)
             if old_wallet.balance - old_delta < Decimal("0.00"):
-                raise ValidationError("Insufficient funds in the old wallet to revert transaction.")
+                raise ValidationError(
+                    "Insufficient funds in the old wallet to revert transaction."
+                )
             if new_wallet.balance + new_delta < Decimal("0.00"):
                 raise ValidationError("Insufficient funds in the target wallet.")
 

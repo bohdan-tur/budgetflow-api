@@ -1,14 +1,14 @@
-import pytest
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
+
+import pytest
 
 from finance.models.choices import CategoryType
 from finance.services.report_service import ReportService
-
 from tests.factories import (
-    WalletFactory,
     CategoryFactory,
     TransactionFactory,
+    WalletFactory,
 )
 
 pytestmark = pytest.mark.django_db

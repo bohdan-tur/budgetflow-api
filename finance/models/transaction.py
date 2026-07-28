@@ -1,9 +1,12 @@
-from django.db import models
 from decimal import Decimal
+
 from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
+
 from .category import Category
 from .wallet import Wallet
-from django.utils import timezone
+
 
 class Transaction(models.Model):
     wallet = models.ForeignKey(
@@ -28,7 +31,9 @@ class Transaction(models.Model):
         blank=True,
     )
 
-    transaction_date = models.DateField(default = timezone.localdate,)
+    transaction_date = models.DateField(
+        default=timezone.localdate,
+    )
 
     created_at = models.DateTimeField(
         auto_now_add=True,

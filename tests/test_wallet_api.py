@@ -1,12 +1,9 @@
 import pytest
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from tests.factories import WalletFactory
 
 pytestmark = pytest.mark.django_db
-
-
 
 
 def test_get_wallet_list(auth_client, wallet):
@@ -107,9 +104,7 @@ def test_update_other_user_wallet(auth_client):
 
 
 def test_delete_wallet(auth_client, wallet):
-    response = auth_client.delete(
-        f"/api/wallets/{wallet.id}/"
-    )
+    response = auth_client.delete(f"/api/wallets/{wallet.id}/")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -117,9 +112,7 @@ def test_delete_wallet(auth_client, wallet):
 def test_delete_other_user_wallet(auth_client):
     wallet = WalletFactory()
 
-    response = auth_client.delete(
-        f"/api/wallets/{wallet.id}/"
-    )
+    response = auth_client.delete(f"/api/wallets/{wallet.id}/")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
