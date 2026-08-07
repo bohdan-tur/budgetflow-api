@@ -44,6 +44,11 @@ class TransferSerializer(serializers.ModelSerializer):
                 "Source and destination wallets must be different."
             )
 
+        if from_wallet.currency != to_wallet.currency:
+            raise serializers.ValidationError(
+                "Transfers between wallets with different currencies are not allowed."
+            )
+
         if from_wallet.balance < amount:
             raise serializers.ValidationError("Insufficient funds.")
 

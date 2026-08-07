@@ -10,53 +10,52 @@ from finance.models.transaction import Transaction
 
 class ReportService:
     @staticmethod
-    def get_total_income(*, user) -> Decimal:
-        result = Transaction.objects.filter(
-            wallet__user=user,
-            category__type=CategoryType.INCOME,
-        ).aggregate(
-            total=Coalesce(
-                Sum("amount"),
-                Decimal("0.00"),
-                output_field=DecimalField(),
+    def get_summary(*, user) -> dict[str, list[dict]]:
+        balances = {
+            item["currency"]: item["current_balance"]
+            for item in Wallet.objects.filter(user=user)
+            .values("currency")
+            .annotate(
+                current_balance=Coalesce(
+                    Sum("balance"),
+                    Decimal("0.00"),
+                    output_field=DecimalField(),
+                )
             )
-        )
-        return result["total"]
-
-    @staticmethod
-    def get_total_expense(*, user) -> Decimal:
-        result = Transaction.objects.filter(
-            wallet__user=user,
-            category__type=CategoryType.EXPENSE,
-        ).aggregate(
-            total=Coalesce(
-                Sum("amount"),
-                Decimal("0.00"),
-                output_field=DecimalField(),
-            )
-        )
-        return result["total"]
-
-    @staticmethod
-    def get_current_balance(*, user) -> Decimal:
-        result = Wallet.objects.filter(
-            user=user,
-        ).aggregate(
-            total=Coalesce(
-                Sum("balance"),
-                Decimal("0.00"),
-                output_field=DecimalField(),
-            )
-        )
-        return result["total"]
-
-    @staticmethod
-    def get_summary(*, user) -> dict[str, Decimal]:
-        return {
-            "total_income": ReportService.get_total_income(user=user),
-            "total_expense": ReportService.get_total_expense(user=user),
-            "current_balance": ReportService.get_current_balance(user=user),
         }
+
+        transaction_totals = {
+            item["currency"]: item
+            for item in Transaction.objects.filter(wallet__user=user)
+            .annotate(currency=F("wallet__currency"))
+            .values("currency")
+            .annotate(
+                total_income=Coalesce(
+                    Sum("amount", filter=Q(category__type=CategoryType.INCOME)),
+                    Decimal("0.00"),
+                    output_field=DecimalField(),
+                ),
+                total_expense=Coalesce(
+                    Sum("amount", filter=Q(category__type=CategoryType.EXPENSE)),
+                    Decimal("0.00"),
+                    output_field=DecimalField(),
+                ),
+            )
+        }
+
+        currencies = []
+        for currency, current_balance in sorted(balances.items()):
+            totals = transaction_totals.get(currency, {})
+            currencies.append(
+                {
+                    "currency": currency,
+                    "total_income": totals.get("total_income", Decimal("0.00")),
+                    "total_expense": totals.get("total_expense", Decimal("0.00")),
+                    "current_balance": current_balance,
+                }
+            )
+
+        return {"currencies": currencies}
 
     @staticmethod
     def get_expenses_by_category(*, user):
@@ -65,9 +64,13 @@ class ReportService:
                 wallet__user=user,
                 category__type=CategoryType.EXPENSE,
             )
-            .annotate(category_name=F("category__name"))
-            .values("category_name")
+            .annotate(
+                category_name=F("category__name"),
+                currency=F("wallet__currency"),
+            )
+            .values("currency", "category_name")
             .annotate(total=Sum("amount"))
+            .order_by("currency", "category_name")
         )
 
     @staticmethod
@@ -77,17 +80,24 @@ class ReportService:
                 wallet__user=user,
                 category__type=CategoryType.INCOME,
             )
-            .annotate(category_name=F("category__name"))
-            .values("category_name")
+            .annotate(
+                category_name=F("category__name"),
+                currency=F("wallet__currency"),
+            )
+            .values("currency", "category_name")
             .annotate(total=Sum("amount"))
+            .order_by("currency", "category_name")
         )
 
     @staticmethod
     def get_monthly_statistics(*, user):
         return (
             Transaction.objects.filter(wallet__user=user)
-            .annotate(month=TruncMonth("transaction_date"))
-            .values("month")
+            .annotate(
+                month=TruncMonth("transaction_date"),
+                currency=F("wallet__currency"),
+            )
+            .values("month", "currency")
             .annotate(
                 income=Coalesce(
                     Sum("amount", filter=Q(category__type=CategoryType.INCOME)),
@@ -100,7 +110,7 @@ class ReportService:
                     output_field=DecimalField(),
                 ),
             )
-            .order_by("month")
+            .order_by("month", "currency")
         )
 
     @staticmethod
@@ -113,28 +123,51 @@ class ReportService:
         if end_time:
             queryset = queryset.filter(transaction_date__lte=end_time)
 
-        return queryset.aggregate(
-            total_income=Coalesce(
-                Sum("amount", filter=Q(category__type=CategoryType.INCOME)),
-                Decimal("0.00"),
-                output_field=DecimalField(),
-            ),
-            total_expense=Coalesce(
-                Sum("amount", filter=Q(category__type=CategoryType.EXPENSE)),
-                Decimal("0.00"),
-                output_field=DecimalField(),
-            ),
+        currencies = list(
+            queryset.annotate(currency=F("wallet__currency"))
+            .values("currency")
+            .annotate(
+                total_income=Coalesce(
+                    Sum("amount", filter=Q(category__type=CategoryType.INCOME)),
+                    Decimal("0.00"),
+                    output_field=DecimalField(),
+                ),
+                total_expense=Coalesce(
+                    Sum("amount", filter=Q(category__type=CategoryType.EXPENSE)),
+                    Decimal("0.00"),
+                    output_field=DecimalField(),
+                ),
+            )
+            .order_by("currency")
         )
+
+        return {"currencies": currencies}
 
     @staticmethod
     def get_top_expense_categories(*, user, limit=5):
-        return (
+        rows = (
             Transaction.objects.filter(
                 wallet__user=user,
                 category__type=CategoryType.EXPENSE,
             )
-            .annotate(category_name=F("category__name"))
-            .values("category_name")
+            .annotate(
+                category_name=F("category__name"),
+                currency=F("wallet__currency"),
+            )
+            .values("currency", "category_name")
             .annotate(total=Sum("amount"))
-            .order_by("-total")[:limit]
+            .order_by("currency", "-total", "category_name")
         )
+
+        result = []
+        currency_counts = {}
+
+        for row in rows:
+            currency = row["currency"]
+            currency_counts.setdefault(currency, 0)
+
+            if currency_counts[currency] < limit:
+                result.append(row)
+                currency_counts[currency] += 1
+
+        return result

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from finance.models.budget import Budget
+from finance.models.choices import CategoryType
 from finance.services.budget_service import BudgetService
 
 
@@ -56,6 +57,12 @@ class BudgetSerializer(serializers.ModelSerializer):
     def validate_category(self, category):
         if category.user != self.context["request"].user:
             raise serializers.ValidationError("You don't have access to this category.")
+
+        if category.type != CategoryType.EXPENSE:
+            raise serializers.ValidationError(
+                "Budgets can only be created for expense categories."
+            )
+
         return category
 
     def get_spent_amount(self, obj):

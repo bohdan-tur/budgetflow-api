@@ -11,7 +11,7 @@ from .wallet import Wallet
 class Transaction(models.Model):
     wallet = models.ForeignKey(
         Wallet,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="transactions",
     )
 

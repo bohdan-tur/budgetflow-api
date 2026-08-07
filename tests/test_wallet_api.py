@@ -1,7 +1,13 @@
 import pytest
 from rest_framework import status
 
-from tests.factories import WalletFactory
+from finance.models import Wallet
+from tests.factories import (
+    CategoryFactory,
+    TransactionFactory,
+    TransferFactory,
+    WalletFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -107,6 +113,42 @@ def test_delete_wallet(auth_client, wallet):
     response = auth_client.delete(f"/api/wallets/{wallet.id}/")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+def test_delete_wallet_with_transaction(auth_client, wallet):
+    TransactionFactory(
+        wallet=wallet,
+        category=CategoryFactory(user=wallet.user),
+    )
+
+    response = auth_client.delete(f"/api/wallets/{wallet.id}/")
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert Wallet.objects.filter(id=wallet.id).exists()
+
+
+def test_delete_wallet_with_outgoing_transfer(auth_client, wallet):
+    TransferFactory(
+        from_wallet=wallet,
+        to_wallet=WalletFactory(user=wallet.user),
+    )
+
+    response = auth_client.delete(f"/api/wallets/{wallet.id}/")
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert Wallet.objects.filter(id=wallet.id).exists()
+
+
+def test_delete_wallet_with_incoming_transfer(auth_client, wallet):
+    TransferFactory(
+        from_wallet=WalletFactory(user=wallet.user),
+        to_wallet=wallet,
+    )
+
+    response = auth_client.delete(f"/api/wallets/{wallet.id}/")
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert Wallet.objects.filter(id=wallet.id).exists()
 
 
 def test_delete_other_user_wallet(auth_client):

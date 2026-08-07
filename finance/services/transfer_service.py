@@ -1,8 +1,8 @@
 from typing import Any
 
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
+from rest_framework.exceptions import ValidationError
 
 from finance.models.transfer import Transfer
 from finance.models.wallet import Wallet
@@ -37,6 +37,11 @@ class TransferService:
 
         if from_wallet.user != to_wallet.user:
             raise ValidationError("Cannot transfer to another user's wallet.")
+
+        if from_wallet.currency != to_wallet.currency:
+            raise ValidationError(
+                "Transfers between wallets with different currencies are not allowed."
+            )
 
         if from_wallet.balance < amount:
             raise ValidationError("Insufficient funds.")
