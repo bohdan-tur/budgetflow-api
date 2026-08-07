@@ -345,6 +345,22 @@ endpoints, including authentication boundaries, balance recalculation,
 insufficient funds, cross-user access, currency rules, budgets, reports, and
 protected deletion.
 
+Measure line and branch coverage with `coverage.py`:
+
+```bash
+docker compose run --rm web coverage run -m pytest
+docker compose run --rm web coverage report
+```
+
+Generate a detailed HTML report:
+
+```bash
+docker compose run --rm web coverage html
+```
+
+Open `htmlcov/index.html` in a browser to inspect covered and missing lines.
+CI requires at least **85%** total coverage.
+
 Run Ruff locally:
 
 ```bash
