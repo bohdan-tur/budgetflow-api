@@ -4,17 +4,14 @@ import pytest
 from rest_framework.exceptions import ValidationError
 
 from finance.models import Transaction
+from finance.models.choices import CategoryType
 from finance.services.transaction_service import TransactionService
 from tests.factories import (
-    WalletFactory,
     CategoryFactory,
+    WalletFactory,
 )
 
-from finance.models.choices import CategoryType
-
 pytestmark = pytest.mark.django_db
-
-
 
 
 def test_create_income_transaction():
@@ -69,8 +66,6 @@ def test_create_expense_transaction():
     assert wallet.balance == Decimal("750.00")
 
 
-
-
 def test_create_expense_with_insufficient_funds():
     wallet = WalletFactory(
         balance=Decimal("100.00"),
@@ -95,7 +90,6 @@ def test_create_expense_with_insufficient_funds():
 
     assert not Transaction.objects.filter(wallet=wallet, category=category).exists()
     assert wallet.balance == Decimal("100.00")
-
 
 
 def test_update_income_amount():
@@ -128,8 +122,6 @@ def test_update_income_amount():
 
     assert updated.amount == Decimal("800.00")
     assert wallet.balance == Decimal("1800.00")
-
-
 
 
 def test_update_transaction_change_income_to_expense():
@@ -204,7 +196,6 @@ def test_update_transaction_change_wallet():
     assert wallet2.balance == Decimal("1500.00")
 
 
-
 def test_destroy_income_transaction():
     wallet = WalletFactory(
         balance=Decimal("1500.00"),
@@ -231,7 +222,6 @@ def test_destroy_income_transaction():
     assert not Transaction.objects.filter(id=transaction.id).exists()
 
 
-
 def test_destroy_expense_transaction():
     wallet = WalletFactory(
         balance=Decimal("500.00"),
@@ -256,7 +246,6 @@ def test_destroy_expense_transaction():
 
     assert wallet.balance == Decimal("1000.00")
     assert not Transaction.objects.filter(id=transaction.id).exists()
-
 
 
 def test_update_transaction_change_expense_to_income():
@@ -293,8 +282,6 @@ def test_update_transaction_change_expense_to_income():
     assert wallet.balance == Decimal("1500.00")
 
 
-
-
 def test_update_expense_amount():
     wallet = WalletFactory(
         balance=Decimal("500.00"),
@@ -322,7 +309,6 @@ def test_update_expense_amount():
 
     assert updated.amount == Decimal("800.00")
     assert wallet.balance == Decimal("200.00")
-
 
 
 def test_update_expense_insufficient_funds():

@@ -4,7 +4,6 @@ from finance.models.transfer import Transfer
 
 
 class TransferSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Transfer
 
@@ -27,16 +26,12 @@ class TransferSerializer(serializers.ModelSerializer):
 
     def validate_from_wallet(self, wallet):
         if wallet.user != self.context["request"].user:
-            raise serializers.ValidationError(
-                "You don't have access to this wallet."
-            )
+            raise serializers.ValidationError("You don't have access to this wallet.")
         return wallet
 
     def validate_to_wallet(self, wallet):
         if wallet.user != self.context["request"].user:
-            raise serializers.ValidationError(
-                "You don't have access to this wallet."
-            )
+            raise serializers.ValidationError("You don't have access to this wallet.")
         return wallet
 
     def validate(self, attrs):
@@ -50,8 +45,6 @@ class TransferSerializer(serializers.ModelSerializer):
             )
 
         if from_wallet.balance < amount:
-            raise serializers.ValidationError(
-                "Insufficient funds."
-            )
+            raise serializers.ValidationError("Insufficient funds.")
 
         return attrs

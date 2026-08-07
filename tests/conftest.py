@@ -32,7 +32,6 @@ def expense_category(user):
     return CategoryFactory(user=user, type=CategoryType.EXPENSE)
 
 
-
 @pytest.fixture
 def from_wallet(user):
     return WalletFactory(user=user)
@@ -58,11 +57,9 @@ def budget(user, expense_category):
     return BudgetFactory(user=user, category=expense_category)
 
 
-
 @pytest.fixture
 def api_client():
     return APIClient()
-
 
 
 @pytest.fixture

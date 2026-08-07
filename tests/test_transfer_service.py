@@ -67,7 +67,10 @@ def test_create_transfer_insufficient_funds():
     from_wallet.refresh_from_db()
     to_wallet.refresh_from_db()
 
-    assert not Transfer.objects.filter(from_wallet=from_wallet, to_wallet=to_wallet).exists()
+    assert not (
+        Transfer.objects.filter(from_wallet=from_wallet, to_wallet=to_wallet).exists()
+    )
+
     assert from_wallet.balance == Decimal("100.00")
     assert to_wallet.balance == Decimal("500.00")
 

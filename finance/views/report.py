@@ -12,7 +12,6 @@ from finance.services.report_service import ReportService
 
 
 class ReportViewSet(GenericViewSet):
-
     @action(detail=False, methods=["get"])
     def summary(self, request):
         data = ReportService.get_summary(

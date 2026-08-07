@@ -55,9 +55,7 @@ class BudgetSerializer(serializers.ModelSerializer):
 
     def validate_category(self, category):
         if category.user != self.context["request"].user:
-            raise serializers.ValidationError(
-                "You don't have access to this category."
-            )
+            raise serializers.ValidationError("You don't have access to this category.")
         return category
 
     def get_spent_amount(self, obj):

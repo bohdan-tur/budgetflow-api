@@ -1,21 +1,19 @@
-
+from decimal import Decimal
 from typing import Any
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from decimal import Decimal
-
 from django.db.models import DecimalField, Sum
 from django.db.models.functions import Coalesce
 
+from finance.models.budget import Budget
 from finance.models.choices import CategoryType
 from finance.models.transaction import Transaction
-from finance.models.budget import Budget
 
 User = get_user_model()
 
 
 class BudgetService:
-
     @staticmethod
     @transaction.atomic
     def create(
@@ -40,9 +38,7 @@ class BudgetService:
             setattr(instance, attr, value)
 
         if validated_data:
-            instance.save(
-                update_fields=list(validated_data.keys())
-            )
+            instance.save(update_fields=list(validated_data.keys()))
 
         return instance
 
@@ -56,22 +52,19 @@ class BudgetService:
 
     @staticmethod
     def get_spent_amount(*, budget: Budget) -> Decimal:
-        result = (
-            Transaction.objects.filter(
-                wallet__user=budget.user,
-                category=budget.category,
-                transaction_date__range=(
-                    budget.start_date,
-                    budget.end_date,
-                ),
-                category__type=CategoryType.EXPENSE,
-            )
-            .aggregate(
-                total=Coalesce(
-                    Sum("amount"),
-                    Decimal("0.00"),
-                    output_field=DecimalField(),
-                )
+        result = Transaction.objects.filter(
+            wallet__user=budget.user,
+            category=budget.category,
+            transaction_date__range=(
+                budget.start_date,
+                budget.end_date,
+            ),
+            category__type=CategoryType.EXPENSE,
+        ).aggregate(
+            total=Coalesce(
+                Sum("amount"),
+                Decimal("0.00"),
+                output_field=DecimalField(),
             )
         )
 
@@ -94,9 +87,7 @@ class BudgetService:
             budget=budget,
         )
 
-        return (
-                (spent / budget.amount) * Decimal("100")
-        ).quantize(Decimal("0.01"))
+        return ((spent / budget.amount) * Decimal("100")).quantize(Decimal("0.01"))
 
     @staticmethod
     def is_budget_exceeded(*, budget: Budget) -> bool:
@@ -105,4 +96,3 @@ class BudgetService:
         )
 
         return spent > budget.amount
-

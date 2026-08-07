@@ -1,8 +1,7 @@
+from decimal import Decimal
+
 import pytest
 from rest_framework import status
-from rest_framework.test import APIClient
-
-from decimal import Decimal
 
 from finance.models import Transfer
 from tests.factories import TransferFactory, WalletFactory
@@ -87,6 +86,7 @@ def test_create_transfer(auth_client, from_wallet, to_wallet):
     assert from_wallet.balance == Decimal("500.00")
     assert to_wallet.balance == Decimal("1000.00")
 
+
 def test_create_transfer_invalid_data(auth_client):
     payload = {
         "amount": 500,
@@ -120,8 +120,6 @@ def test_create_transfer_to_other_user_wallet(auth_client, user):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
-
-
 def test_unauthorized_get_transfers(api_client):
     response = api_client.get("/api/transfers/")
 
@@ -138,8 +136,6 @@ def test_unauthorized_create_transfer(api_client):
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-
 
 
 def test_create_transfer_insufficient_balance(
@@ -166,8 +162,8 @@ def test_create_transfer_insufficient_balance(
 
 
 def test_create_transfer_same_wallet(
-        auth_client,
-        from_wallet,
+    auth_client,
+    from_wallet,
 ):
     payload = {
         "from_wallet": from_wallet.id,
@@ -182,8 +178,6 @@ def test_create_transfer_same_wallet(
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-
 
 
 def test_create_transfer_negative_amount(
@@ -204,7 +198,6 @@ def test_create_transfer_negative_amount(
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-
 
 
 def test_create_transfer_zero_amount(

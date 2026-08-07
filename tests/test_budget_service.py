@@ -165,6 +165,9 @@ def test_is_budget_exceeded(user):
         transaction_date=budget.start_date,
     )
 
-    assert BudgetService.is_budget_exceeded(
-        budget=budget,
-    ) is True
+    assert (
+        BudgetService.is_budget_exceeded(
+            budget=budget,
+        )
+        is True
+    )

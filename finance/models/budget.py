@@ -49,8 +49,4 @@ class Budget(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"{self.user.username} | "
-            f"{self.category.name} | "
-            f"{self.amount}"
-        )
+        return f"{self.user.username} | {self.category.name} | {self.amount}"

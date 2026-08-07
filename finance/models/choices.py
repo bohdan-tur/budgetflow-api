@@ -9,5 +9,5 @@ class Currency(models.TextChoices):
 
 
 class CategoryType(models.TextChoices):
-    INCOME  = "INCOME", _("Income")
+    INCOME = "INCOME", _("Income")
     EXPENSE = "EXPENSE", _("Expense")

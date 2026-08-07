@@ -9,11 +9,7 @@ class BudgetViewSet(ModelViewSet):
     serializer_class = BudgetSerializer
 
     def get_queryset(self):
-        return (
-            Budget.objects
-            .filter(user=self.request.user)
-            .select_related("category")
-        )
+        return Budget.objects.filter(user=self.request.user).select_related("category")
 
     def perform_create(self, serializer):
         serializer.instance = BudgetService.create(

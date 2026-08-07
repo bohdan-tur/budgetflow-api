@@ -1,6 +1,5 @@
 import pytest
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from finance.models.choices import CategoryType
 from tests.factories import CategoryFactory
@@ -104,9 +103,7 @@ def test_update_other_user_category(auth_client):
 
 
 def test_delete_category(auth_client, expense_category):
-    response = auth_client.delete(
-        f"/api/categories/{expense_category.id}/"
-    )
+    response = auth_client.delete(f"/api/categories/{expense_category.id}/")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -114,9 +111,7 @@ def test_delete_category(auth_client, expense_category):
 def test_delete_other_user_category(auth_client):
     category = CategoryFactory()
 
-    response = auth_client.delete(
-        f"/api/categories/{category.id}/"
-    )
+    response = auth_client.delete(f"/api/categories/{category.id}/")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 

@@ -1,14 +1,12 @@
-from decimal import Decimal
-
 import pytest
 from rest_framework import status
 
-from tests.factories import WalletFactory, TransactionFactory
+from tests.factories import TransactionFactory, WalletFactory
 
 pytestmark = pytest.mark.django_db
 
 
-def test_get_monthly_report(auth_client,user,income_category,expense_category):
+def test_get_monthly_report(auth_client, user, income_category, expense_category):
     wallet = WalletFactory(user=user)
 
     TransactionFactory(
@@ -29,9 +27,8 @@ def test_get_monthly_report(auth_client,user,income_category,expense_category):
 
     report = response.data[0]
 
-    assert   report['income'] == "100.00"
-    assert   report['expense'] == "50.00"
-
+    assert report["income"] == "100.00"
+    assert report["expense"] == "50.00"
 
 
 def test_get_monthly_report_unauthorized(api_client):
