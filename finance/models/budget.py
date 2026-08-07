@@ -16,7 +16,7 @@ class Budget(models.Model):
 
     category = models.ForeignKey(
         Category,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="budgets",
     )
 

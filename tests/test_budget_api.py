@@ -4,6 +4,7 @@ import pytest
 from rest_framework import status
 
 from finance.models import Budget
+from finance.models.choices import CategoryType
 from tests.factories import BudgetFactory, CategoryFactory
 
 pytestmark = pytest.mark.django_db
@@ -81,6 +82,24 @@ def test_create_budget_other_user_category(auth_client):
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+def test_create_budget_with_income_category(auth_client, income_category):
+    payload = {
+        "category": income_category.id,
+        "amount": 1000,
+        "start_date": date.today(),
+        "end_date": date.today() + timedelta(days=30),
+    }
+
+    response = auth_client.post(
+        "/api/budgets/",
+        payload,
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert not Budget.objects.filter(category=income_category).exists()
+
+
 def test_create_budget_invalid_data(auth_client):
     payload = {
         "amount": 1000,
@@ -122,6 +141,26 @@ def test_update_budget_other_user_category(auth_client, budget):
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_update_budget_with_income_category(auth_client, budget, user):
+    income_category = CategoryFactory(
+        user=user,
+        type=CategoryType.INCOME,
+    )
+
+    response = auth_client.patch(
+        f"/api/budgets/{budget.id}/",
+        {
+            "category": income_category.id,
+        },
+        format="json",
+    )
+
+    budget.refresh_from_db()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert budget.category_id != income_category.id
 
 
 def test_update_other_user_budget(auth_client):

@@ -1,8 +1,14 @@
 import pytest
 from rest_framework import status
 
+from finance.models import Category
 from finance.models.choices import CategoryType
-from tests.factories import CategoryFactory
+from tests.factories import (
+    BudgetFactory,
+    CategoryFactory,
+    TransactionFactory,
+    WalletFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -88,6 +94,68 @@ def test_update_category(auth_client, income_category):
     assert income_category.name == "Updated"
 
 
+def test_update_unused_category_type(auth_client, income_category):
+    response = auth_client.patch(
+        f"/api/categories/{income_category.id}/",
+        {
+            "type": CategoryType.EXPENSE,
+        },
+        format="json",
+    )
+
+    income_category.refresh_from_db()
+
+    assert response.status_code == status.HTTP_200_OK
+    assert income_category.type == CategoryType.EXPENSE
+
+
+def test_update_category_type_used_in_transaction(
+    auth_client,
+    user,
+    income_category,
+):
+    TransactionFactory(
+        wallet=WalletFactory(user=user),
+        category=income_category,
+    )
+
+    response = auth_client.patch(
+        f"/api/categories/{income_category.id}/",
+        {
+            "type": CategoryType.EXPENSE,
+        },
+        format="json",
+    )
+
+    income_category.refresh_from_db()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert income_category.type == CategoryType.INCOME
+
+
+def test_update_category_type_used_in_budget(
+    auth_client,
+    expense_category,
+):
+    BudgetFactory(
+        user=expense_category.user,
+        category=expense_category,
+    )
+
+    response = auth_client.patch(
+        f"/api/categories/{expense_category.id}/",
+        {
+            "type": CategoryType.INCOME,
+        },
+        format="json",
+    )
+
+    expense_category.refresh_from_db()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert expense_category.type == CategoryType.EXPENSE
+
+
 def test_update_other_user_category(auth_client):
     category = CategoryFactory()
 
@@ -106,6 +174,34 @@ def test_delete_category(auth_client, expense_category):
     response = auth_client.delete(f"/api/categories/{expense_category.id}/")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+def test_delete_category_used_in_transaction(
+    auth_client,
+    user,
+    expense_category,
+):
+    TransactionFactory(
+        wallet=WalletFactory(user=user),
+        category=expense_category,
+    )
+
+    response = auth_client.delete(f"/api/categories/{expense_category.id}/")
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert Category.objects.filter(id=expense_category.id).exists()
+
+
+def test_delete_category_used_in_budget(auth_client, expense_category):
+    BudgetFactory(
+        user=expense_category.user,
+        category=expense_category,
+    )
+
+    response = auth_client.delete(f"/api/categories/{expense_category.id}/")
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert Category.objects.filter(id=expense_category.id).exists()
 
 
 def test_delete_other_user_category(auth_client):
