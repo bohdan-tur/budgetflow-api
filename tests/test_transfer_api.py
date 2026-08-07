@@ -4,6 +4,7 @@ import pytest
 from rest_framework import status
 
 from finance.models import Transfer
+from finance.models.choices import Currency
 from tests.factories import TransferFactory, WalletFactory
 
 pytestmark = pytest.mark.django_db
@@ -178,6 +179,42 @@ def test_create_transfer_same_wallet(
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_create_transfer_between_different_currencies(
+    auth_client,
+    user,
+):
+    from_wallet = WalletFactory(
+        user=user,
+        currency=Currency.USD,
+        balance=Decimal("1000.00"),
+    )
+    to_wallet = WalletFactory(
+        user=user,
+        currency=Currency.UAH,
+    )
+
+    response = auth_client.post(
+        "/api/transfers/",
+        {
+            "from_wallet": from_wallet.id,
+            "to_wallet": to_wallet.id,
+            "amount": 100,
+        },
+        format="json",
+    )
+
+    from_wallet.refresh_from_db()
+    to_wallet.refresh_from_db()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert not Transfer.objects.filter(
+        from_wallet=from_wallet,
+        to_wallet=to_wallet,
+    ).exists()
+    assert from_wallet.balance == Decimal("1000.00")
+    assert to_wallet.balance == Decimal("1000.00")
 
 
 def test_create_transfer_negative_amount(

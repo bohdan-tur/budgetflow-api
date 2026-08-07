@@ -2,9 +2,10 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 
 from finance.models import Transfer
+from finance.models.choices import Currency
 from finance.services.transfer_service import TransferService
 from tests.factories import WalletFactory
 
@@ -157,3 +158,36 @@ def test_create_transfer_same_wallet():
 
     assert not Transfer.objects.filter(from_wallet=wallet, to_wallet=wallet).exists()
     assert wallet.balance == Decimal("1000.00")
+
+
+def test_create_transfer_between_different_currencies():
+    from_wallet = WalletFactory(
+        currency=Currency.USD,
+        balance=Decimal("1000.00"),
+    )
+    to_wallet = WalletFactory(
+        user=from_wallet.user,
+        currency=Currency.UAH,
+        balance=Decimal("500.00"),
+    )
+
+    with pytest.raises(ValidationError):
+        TransferService.create(
+            validated_data={
+                "from_wallet": from_wallet,
+                "to_wallet": to_wallet,
+                "amount": Decimal("300.00"),
+                "description": "Transfer",
+                "transfer_date": date.today(),
+            }
+        )
+
+    from_wallet.refresh_from_db()
+    to_wallet.refresh_from_db()
+
+    assert not Transfer.objects.filter(
+        from_wallet=from_wallet,
+        to_wallet=to_wallet,
+    ).exists()
+    assert from_wallet.balance == Decimal("1000.00")
+    assert to_wallet.balance == Decimal("500.00")
