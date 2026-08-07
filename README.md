@@ -1,4 +1,4 @@
-# Finance Tracker API
+# BudgetFlow API
 
 [![CI](https://github.com/bohdan-tur/finance-tracker/actions/workflows/ci.yaml/badge.svg)](https://github.com/bohdan-tur/finance-tracker/actions/workflows/ci.yaml)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
