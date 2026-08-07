@@ -2,6 +2,7 @@ import pytest
 from rest_framework import status
 
 from finance.models import Wallet
+from finance.models.choices import Currency
 from tests.factories import (
     CategoryFactory,
     TransactionFactory,
@@ -93,6 +94,36 @@ def test_update_wallet(auth_client, wallet):
 
     assert response.status_code == status.HTTP_200_OK
     assert wallet.name == "Updated Wallet"
+
+
+def test_update_wallet_currency(auth_client, wallet):
+    original_currency = wallet.currency
+
+    response = auth_client.patch(
+        f"/api/wallets/{wallet.id}/",
+        {
+            "currency": Currency.USD,
+        },
+        format="json",
+    )
+
+    wallet.refresh_from_db()
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert wallet.currency == original_currency
+
+
+def test_update_wallet_with_same_currency(auth_client, wallet):
+    response = auth_client.patch(
+        f"/api/wallets/{wallet.id}/",
+        {
+            "currency": wallet.currency,
+        },
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["currency"] == wallet.currency
 
 
 def test_update_other_user_wallet(auth_client):
