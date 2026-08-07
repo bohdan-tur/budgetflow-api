@@ -1,6 +1,6 @@
 # BudgetFlow API
 
-[![CI](https://github.com/bohdan-tur/finance-tracker/actions/workflows/ci.yaml/badge.svg)](https://github.com/bohdan-tur/finance-tracker/actions/workflows/ci.yaml)
+[![CI](https://github.com/bohdan-tur/budgetflow-api/actions/workflows/ci.yaml/badge.svg)](https://github.com/bohdan-tur/budgetflow-api/actions/workflows/ci.yaml)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.2-092E20?logo=django&logoColor=white)
 ![Django REST Framework](https://img.shields.io/badge/DRF-3.17-A30000?logo=django&logoColor=white)
@@ -112,8 +112,8 @@ changes and reporting logic.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/bohdan-tur/finance-tracker.git
-cd finance-tracker
+git clone https://github.com/bohdan-tur/budgetflow-api.git
+cd budgetflow-api
 ```
 
 ### 2. Create the environment file
@@ -374,7 +374,7 @@ service on every pull request to `main`.
 ## Project structure
 
 ```text
-finance-tracker/
+budgetflow-api/
 ├── api/                     # API router
 ├── config/                  # Django settings and application entry points
 ├── finance/
