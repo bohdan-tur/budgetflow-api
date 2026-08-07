@@ -18,3 +18,24 @@ select = [
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+source = [
+    ".",
+]
+omit = [
+    ".venv/*",
+    "*/migrations/*",
+    "tests/*",
+    "manage.py",
+    "config/asgi.py",
+    "config/wsgi.py",
+]
+
+[tool.coverage.report]
+fail_under = 85
+precision = 2
+show_missing = true
+skip_covered = true
