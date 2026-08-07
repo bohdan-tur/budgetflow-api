@@ -5,8 +5,10 @@ from rest_framework.viewsets import GenericViewSet
 from finance.serializers.report import (
     CategoryReportSerializer,
     MonthlyStatisticSerializer,
+    PeriodQuerySerializer,
     PeriodStatisticSerializer,
     ReportSerializer,
+    TopCategoriesQuerySerializer,
 )
 from finance.services.report_service import ReportService
 
@@ -63,13 +65,13 @@ class ReportViewSet(GenericViewSet):
 
     @action(detail=False, methods=["get"])
     def statistics_by_period(self, request):
-        start_date = request.query_params.get("start_date")
-        end_date = request.query_params.get("end_date")
+        query_serializer = PeriodQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
 
         data = ReportService.get_statistics_by_period(
             user=request.user,
-            start_time=start_date,
-            end_time=end_date,
+            start_time=query_serializer.validated_data.get("start_date"),
+            end_time=query_serializer.validated_data.get("end_date"),
         )
 
         serializer = PeriodStatisticSerializer(
@@ -80,11 +82,12 @@ class ReportViewSet(GenericViewSet):
 
     @action(detail=False, methods=["get"])
     def top_expense_categories(self, request):
-        limit = int(request.query_params.get("limit", 5))
+        query_serializer = TopCategoriesQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
 
         data = ReportService.get_top_expense_categories(
             user=request.user,
-            limit=limit,
+            limit=query_serializer.validated_data["limit"],
         )
 
         serializer = CategoryReportSerializer(
