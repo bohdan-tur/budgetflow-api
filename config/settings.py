@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "users",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "finance",
     "api",
 ]
@@ -158,4 +159,6 @@ SIMPLE_JWT = {
         minutes=int(os.getenv("ACCESS_TOKEN_MINUTES", 15))
     ),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("REFRESH_TOKEN_DAYS", 7))),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }

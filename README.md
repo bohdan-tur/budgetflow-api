@@ -217,6 +217,17 @@ Refresh an expired access token with:
 POST /api/auth/token/refresh/
 ```
 
+Send the current refresh token in the request body:
+
+```json
+{
+  "refresh": "<refresh-token>"
+}
+```
+
+The response contains a new access token and a rotated refresh token. The
+submitted refresh token is blacklisted and cannot be reused.
+
 ## API overview
 
 Base URL:
@@ -231,7 +242,7 @@ Base URL:
 | --- | --- | --- |
 | `POST` | `/auth/register/` | Register a user and receive JWT tokens |
 | `POST` | `/auth/token/` | Obtain access and refresh tokens |
-| `POST` | `/auth/token/refresh/` | Refresh the access token |
+| `POST` | `/auth/token/refresh/` | Rotate the refresh token and issue a new token pair |
 
 ### Finance resources
 
@@ -340,7 +351,7 @@ Run the complete test suite in Docker:
 docker compose run --rm web python -m pytest
 ```
 
-The current suite contains **134 passing tests** covering services and API
+The current suite contains **135 passing tests** covering services and API
 endpoints, including authentication boundaries, balance recalculation,
 insufficient funds, cross-user access, currency rules, budgets, reports, and
 protected deletion.
