@@ -1,184 +1,147 @@
 # BudgetFlow API
 
 [![CI](https://github.com/bohdan-tur/budgetflow-api/actions/workflows/ci.yaml/badge.svg)](https://github.com/bohdan-tur/budgetflow-api/actions/workflows/ci.yaml)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
-![Django](https://img.shields.io/badge/Django-5.2-092E20?logo=django&logoColor=white)
-![Django REST Framework](https://img.shields.io/badge/DRF-3.17-A30000?logo=django&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.2-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![Django REST Framework](https://img.shields.io/badge/DRF-3.17-A30000?logo=django&logoColor=white)](https://www.django-rest-framework.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
-A REST API for personal finance management, built with Django REST Framework.
-It supports multiple wallets and currencies, income and expense tracking,
-wallet-to-wallet transfers, category budgets, and currency-aware financial
-reports.
+A personal-finance REST API built with Django REST Framework. BudgetFlow
+supports multiple wallets and currencies, income and expense tracking,
+wallet-to-wallet transfers, category budgets, and currency-aware reports.
 
-The project focuses on backend fundamentals that matter in financial software:
-data isolation, decimal arithmetic, atomic balance updates, row locking,
-validation of business rules, and automated testing.
+The project emphasizes correctness in financial workflows: strict user data
+isolation, decimal arithmetic, atomic balance updates, row-level locking, and
+business-rule verification through automated tests.
 
-> **Status:** actively developed portfolio project.
+## Highlights
 
-## Table of contents
-
-- [Features](#features)
-- [Key business rules](#key-business-rules)
-- [Tech stack](#tech-stack)
-- [Architecture](#architecture)
-- [Quick start with Docker](#quick-start-with-docker)
-- [Environment variables](#environment-variables)
-- [Authentication](#authentication)
-- [API overview](#api-overview)
-- [Example workflow](#example-workflow)
-- [Testing and code quality](#testing-and-code-quality)
-- [Project structure](#project-structure)
-- [Roadmap](#roadmap)
-
-## Features
-
-- JWT registration and authentication.
+- JWT authentication with rotating and blacklisted refresh tokens.
 - User-owned wallets in `UAH`, `USD`, and `EUR`.
-- Income and expense categories.
-- Transactions that automatically update wallet balances.
-- Atomic transfers between wallets of the same currency.
+- Income and expense transactions with automatic balance recalculation.
+- Atomic same-currency transfers between wallets.
 - Category budgets with calculated spending progress.
 - Reports grouped by currency, category, month, and date range.
-- Protection against accessing another user's financial data.
-- Protection against deleting resources that contain financial history.
-- Dockerized local environment with PostgreSQL health checks.
-- GitHub Actions pipeline for linting, Django checks, and tests.
+- Protection against cross-user access and deletion of financial history.
+- Dockerized PostgreSQL environment and GitHub Actions verification.
 
-## Key business rules
+## Financial integrity
 
-The API enforces several rules to keep financial data consistent:
-
-- Monetary values use `Decimal`, not floating-point numbers.
-- An expense cannot make a wallet balance negative.
+- Monetary values use `Decimal`, never binary floating point.
+- Expenses cannot reduce a wallet balance below zero.
 - Balance-changing operations run inside database transactions.
-- Wallet rows are locked during balance updates to prevent race conditions.
-- Transfers are allowed only between wallets owned by the same user and using
-  the same currency.
-- A wallet's currency cannot be changed after creation.
-- Budgets can be created only for expense categories.
-- A category type cannot change after the category is used by a transaction or
-  budget.
-- Wallets and categories containing financial history cannot be deleted.
-- Reports never add amounts expressed in different currencies together.
-
-## Tech stack
-
-| Area | Technology |
-| --- | --- |
-| Language | Python 3.12 |
-| Web framework | Django 5.2 |
-| API | Django REST Framework |
-| Authentication | Simple JWT |
-| Database | PostgreSQL 16 |
-| Testing | Pytest, pytest-django, Factory Boy |
-| Code quality | Ruff |
-| Containers | Docker, Docker Compose |
-| CI | GitHub Actions |
+- Wallet rows are locked while balances are updated to prevent races.
+- Transfers require two wallets owned by the same user and using the same
+  currency.
+- Wallet currency becomes immutable after creation.
+- Budgets can reference only expense categories.
+- A category type cannot change after the category is used.
+- Wallets and categories with financial history cannot be deleted.
+- Reports never add values expressed in different currencies.
 
 ## Architecture
 
-Money-changing operations are separated from the HTTP layer and implemented in
+Money-changing operations are kept outside the HTTP layer and implemented as
 services:
 
 ```text
 HTTP request
-    │
-    ▼
-ViewSet ── authentication and user-scoped queryset
-    │
-    ▼
-Serializer ── input validation and response formatting
-    │
-    ▼
-Service ── business rules, atomic operations, row locking
-    │
-    ▼
-Django ORM ── PostgreSQL
+    |
+    v
+ViewSet -------- authentication and user-scoped queryset
+    |
+    v
+Serializer ----- input validation and response formatting
+    |
+    v
+Service -------- business rules, atomic operations, row locking
+    |
+    v
+Django ORM ----- PostgreSQL
 ```
 
-This keeps serializers focused on API validation while services handle balance
-changes and reporting logic.
+This keeps serializers focused on API contracts while services own balance
+changes, transfers, budgets, and reporting logic.
 
-## Quick start with Docker
+## Tech stack
+
+| Area | Technologies |
+|---|---|
+| API | Python 3.12, Django 5.2, Django REST Framework |
+| Authentication | Simple JWT |
+| Persistence | PostgreSQL 16, Django ORM |
+| Testing | Pytest, pytest-django, Factory Boy, coverage.py |
+| Quality and CI | Ruff, Django system checks, GitHub Actions |
+| Infrastructure | Docker, Docker Compose |
+
+## Quick start
 
 ### Prerequisites
 
 - Git
-- Docker Desktop or Docker Engine with Docker Compose
+- Docker Engine or Docker Desktop with Docker Compose
 
-### 1. Clone the repository
+### 1. Clone and configure
 
 ```bash
 git clone https://github.com/bohdan-tur/budgetflow-api.git
 cd budgetflow-api
-```
-
-### 2. Create the environment file
-
-Linux/macOS:
-
-```bash
 cp .env.example .env
 ```
 
-PowerShell:
+PowerShell equivalent:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Replace the placeholder values in `.env`, especially `SECRET_KEY` and
-`DB_PASSWORD`.
+Replace the placeholder `SECRET_KEY` and `DB_PASSWORD` values in `.env`.
 
-### 3. Build and start the application
+### 2. Start the application
 
 ```bash
 docker compose up --build
 ```
 
-Docker Compose waits for PostgreSQL, applies migrations, and starts Django.
-The API is then available at:
+Compose waits for PostgreSQL, applies Django migrations, and starts the API.
 
-```text
-http://localhost:8000/api/
-```
+| Service | Address |
+|---|---|
+| API | <http://localhost:8000/api/> |
+| PostgreSQL | `localhost:5435` |
 
-PostgreSQL is exposed locally on port `5435`.
-
-To stop the application without deleting database data:
+Stop the containers without deleting database data:
 
 ```bash
 docker compose down
 ```
 
-## Environment variables
+## Configuration
 
-The repository contains a safe-to-commit `.env.example`. The real `.env` is
-ignored by Git.
+The repository includes a safe-to-commit [`.env.example`](.env.example). The
+real `.env` file is ignored by Git.
 
-| Variable | Purpose | Example |
-| --- | --- | --- |
-| `DEBUG` | Enables Django debug mode | `True` |
-| `SECRET_KEY` | Django cryptographic signing key | replace the placeholder |
+| Variable | Purpose | Development example |
+|---|---|---|
+| `DEBUG` | Django debug mode | `True` |
+| `SECRET_KEY` | Cryptographic signing key | replace the placeholder |
 | `ALLOWED_HOSTS` | Comma-separated accepted hosts | `localhost,127.0.0.1` |
-| `DB_NAME` | PostgreSQL database name | `finance_tracker` |
+| `DB_NAME` | PostgreSQL database | `finance_tracker` |
 | `DB_USER` | PostgreSQL user | `postgres` |
 | `DB_PASSWORD` | PostgreSQL password | `change-me` |
 | `DB_HOST` | Database host outside Docker | `localhost` |
 | `DB_PORT` | Database port outside Docker | `5435` |
-| `ACCESS_TOKEN_MINUTES` | JWT access token lifetime | `15` |
-| `REFRESH_TOKEN_DAYS` | JWT refresh token lifetime | `7` |
+| `ACCESS_TOKEN_MINUTES` | Access-token lifetime | `15` |
+| `REFRESH_TOKEN_DAYS` | Refresh-token lifetime | `7` |
 
-`SECRET_KEY` is required. The application fails at startup instead of using an
-unsafe fallback value when it is missing.
+The application fails at startup if `SECRET_KEY` is missing instead of falling
+back to an unsafe value.
 
 ## Authentication
 
-All finance endpoints require a Bearer access token. Registration and token
-endpoints are public.
+Registration and token endpoints are public. All finance resources require a
+Bearer access token.
 
 ### Register
 
@@ -192,92 +155,57 @@ curl -X POST http://localhost:8000/api/auth/register/ \
   }'
 ```
 
-Registration returns user information together with access and refresh tokens.
-
-### Obtain a new token pair
-
-```bash
-curl -X POST http://localhost:8000/api/auth/token/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "demo_user",
-    "password": "StrongPassword123!"
-  }'
-```
-
-Use the access token for protected endpoints:
+Registration returns the user together with access and refresh tokens. Use the
+access token on protected endpoints:
 
 ```text
 Authorization: Bearer <access-token>
 ```
 
-Refresh an expired access token with:
-
-```http
-POST /api/auth/token/refresh/
-```
-
-Send the current refresh token in the request body:
-
-```json
-{
-  "refresh": "<refresh-token>"
-}
-```
-
-The response contains a new access token and a rotated refresh token. The
-submitted refresh token is blacklisted and cannot be reused.
+Refresh with `POST /api/auth/token/refresh/`. Rotation returns a new token pair
+and blacklists the submitted refresh token so it cannot be reused.
 
 ## API overview
 
-Base URL:
-
-```text
-/api/
-```
+Base URL: `/api/`
 
 ### Authentication
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `POST` | `/auth/register/` | Register a user and receive JWT tokens |
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/auth/register/` | Register and receive JWT tokens |
 | `POST` | `/auth/token/` | Obtain access and refresh tokens |
-| `POST` | `/auth/token/refresh/` | Rotate the refresh token and issue a new token pair |
+| `POST` | `/auth/token/refresh/` | Rotate the refresh token |
 
 ### Finance resources
 
-| Resource | Endpoints | Supported operations |
-| --- | --- | --- |
-| Wallets | `/wallets/`, `/wallets/{id}/` | List, create, retrieve, rename, delete empty wallet |
-| Categories | `/categories/`, `/categories/{id}/` | Full CRUD with history protection |
-| Transactions | `/transactions/`, `/transactions/{id}/` | Full CRUD with balance recalculation |
-| Transfers | `/transfers/`, `/transfers/{id}/` | Create, list, retrieve |
-| Budgets | `/budgets/`, `/budgets/{id}/` | Full CRUD for expense categories |
+| Resource | Endpoint | Supported operations |
+|---|---|---|
+| Wallets | `/wallets/` | List, create, retrieve, rename, delete when empty |
+| Categories | `/categories/` | CRUD with history protection |
+| Transactions | `/transactions/` | CRUD with balance recalculation |
+| Transfers | `/transfers/` | Create, list, retrieve |
+| Budgets | `/budgets/` | CRUD for expense categories |
 
 ### Reports
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `GET` | `/reports/summary/` | Income, expenses, and balances grouped by currency |
-| `GET` | `/reports/expenses_by_category/` | Expense totals by category and currency |
-| `GET` | `/reports/income_by_category/` | Income totals by category and currency |
-| `GET` | `/reports/monthly_statistics/` | Monthly income and expenses by currency |
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/reports/summary/` | Income, expenses, and balances by currency |
+| `GET` | `/reports/expenses_by_category/` | Expenses by category and currency |
+| `GET` | `/reports/income_by_category/` | Income by category and currency |
+| `GET` | `/reports/monthly_statistics/` | Monthly totals by currency |
 | `GET` | `/reports/statistics_by_period/` | Totals for an optional date range |
 | `GET` | `/reports/top_expense_categories/` | Top expense categories per currency |
 
-Date range example:
+Example filters:
 
 ```http
 GET /api/reports/statistics_by_period/?start_date=2026-01-01&end_date=2026-01-31
-```
-
-Top categories accept a `limit` from `1` to `100`:
-
-```http
 GET /api/reports/top_expense_categories/?limit=3
 ```
 
-Example summary response:
+Reports preserve currency boundaries:
 
 ```json
 {
@@ -298,33 +226,7 @@ Example summary response:
 }
 ```
 
-## Example workflow
-
-### Create a wallet
-
-```bash
-curl -X POST http://localhost:8000/api/wallets/ \
-  -H "Authorization: Bearer <access-token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Main card",
-    "currency": "UAH"
-  }'
-```
-
-### Create an income category
-
-```bash
-curl -X POST http://localhost:8000/api/categories/ \
-  -H "Authorization: Bearer <access-token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Salary",
-    "type": "INCOME"
-  }'
-```
-
-### Record the first income
+## Example transaction
 
 ```bash
 curl -X POST http://localhost:8000/api/transactions/ \
@@ -339,82 +241,64 @@ curl -X POST http://localhost:8000/api/transactions/ \
   }'
 ```
 
-Income increases the wallet balance. Expense transactions validate the
-available balance before updating it. Both operations update the transaction
-and wallet inside the same database transaction.
+Income increases the wallet balance. Expenses first validate sufficient funds.
+The transaction record and resulting wallet balance are committed atomically.
 
-## Testing and code quality
+## Testing and quality
 
-Run the complete test suite in Docker:
+Run the complete suite in Docker:
 
 ```bash
 docker compose run --rm web python -m pytest
 ```
 
-The current suite contains **135 passing tests** covering services and API
-endpoints, including authentication boundaries, balance recalculation,
-insufficient funds, cross-user access, currency rules, budgets, reports, and
-protected deletion.
+Current result: **135 passing tests**. The suite covers authentication
+boundaries, balance recalculation, insufficient funds, cross-user access,
+currency rules, budgets, reports, and protected deletion.
 
-Measure line and branch coverage with `coverage.py`:
+Run line and branch coverage:
 
 ```bash
 docker compose run --rm web coverage run -m pytest
 docker compose run --rm web coverage report
 ```
 
-Generate a detailed HTML report:
-
-```bash
-docker compose run --rm web coverage html
-```
-
-Open `htmlcov/index.html` in a browser to inspect covered and missing lines.
-CI requires at least **85%** total coverage.
-
-Run Ruff locally:
+CI enforces at least **85% total coverage**. Local quality checks:
 
 ```bash
 ruff check .
 ruff format --check .
+python manage.py check
 ```
 
-GitHub Actions runs Ruff, Django system checks, and Pytest against a PostgreSQL
-service on every pull request to `main`.
+GitHub Actions runs Ruff, Django system checks, and the PostgreSQL-backed test
+suite on configured pushes and pull requests.
 
 ## Project structure
 
 ```text
 budgetflow-api/
-├── api/                     # API router
-├── config/                  # Django settings and application entry points
-├── finance/
-│   ├── migrations/          # Database schema history
-│   ├── models/              # Wallets, categories, transactions, transfers, budgets
-│   ├── serializers/         # Request validation and response schemas
-│   ├── services/            # Balance operations, transfers, budgets, reports
-│   └── views/               # DRF viewsets
-├── users/                   # Custom user and JWT registration
-├── tests/
-│   ├── factories/           # Factory Boy test data
-│   ├── test_*_api.py        # Endpoint tests
-│   └── test_*_service.py    # Business-logic tests
-├── .github/workflows/       # Continuous integration
-├── docker-compose.yaml
-├── Dockerfile
-└── manage.py
+|-- api/                     # API router
+|-- config/                  # Django settings and entry points
+|-- finance/
+|   |-- migrations/          # Schema history
+|   |-- models/              # Financial entities
+|   |-- serializers/         # API validation and representation
+|   |-- services/            # Atomic operations and reports
+|   `-- views/               # DRF viewsets
+|-- users/                   # Custom user and registration
+|-- tests/                   # Service and endpoint tests
+|-- .github/workflows/       # Continuous integration
+|-- docker-compose.yaml
+|-- Dockerfile
+|-- .env.example
+`-- manage.py
 ```
-
-## Roadmap
-
-- OpenAPI schema and Swagger/ReDoc documentation.
-- Filtering, ordering, and pagination for resource lists.
-- Optional exchange-rate support for cross-currency transfers.
-- Recurring transactions and scheduled payments.
-- Password reset, email verification, and refresh-token revocation.
-- Deployment configuration and hosted demo.
 
 ## Author
 
-Created by [bohdan-tur](https://github.com/bohdan-tur) as a backend portfolio
-project.
+**Bohdan Turevych**
+
+- GitHub: [@bohdan-tur](https://github.com/bohdan-tur)
+- LinkedIn: [Bohdan Turevych](https://www.linkedin.com/in/bohdan-turevych)
+
