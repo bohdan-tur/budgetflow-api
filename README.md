@@ -252,7 +252,7 @@ Run the complete suite in Docker:
 docker compose run --rm web python -m pytest
 ```
 
-Current result: **135 passing tests**. The suite covers authentication
+Current result: **135 passing tests with 92% total coverage**. The suite covers authentication
 boundaries, balance recalculation, insufficient funds, cross-user access,
 currency rules, budgets, reports, and protected deletion.
 
@@ -263,7 +263,7 @@ docker compose run --rm web coverage run -m pytest
 docker compose run --rm web coverage report
 ```
 
-CI enforces at least **85% total coverage**. Local quality checks:
+CI reports current coverage alongside the PostgreSQL-backed test run. Local quality checks:
 
 ```bash
 ruff check .
