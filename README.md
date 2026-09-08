@@ -1,6 +1,7 @@
 # BudgetFlow API
 
 [![CI](https://github.com/bohdan-tur/budgetflow-api/actions/workflows/ci.yaml/badge.svg)](https://github.com/bohdan-tur/budgetflow-api/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/bohdan-tur/budgetflow-api/graph/badge.svg)](https://codecov.io/gh/bohdan-tur/budgetflow-api)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.2-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
 [![Django REST Framework](https://img.shields.io/badge/DRF-3.17-A30000?logo=django&logoColor=white)](https://www.django-rest-framework.org/)
@@ -30,8 +31,10 @@ business-rule verification through automated tests.
 
 - Monetary values use `Decimal`, never binary floating point.
 - Expenses cannot reduce a wallet balance below zero.
+- PostgreSQL enforces non-negative wallet balances with a database constraint.
 - Balance-changing operations run inside database transactions.
-- Wallet rows are locked while balances are updated to prevent races.
+- Transaction and wallet rows are locked in a deterministic order to prevent
+  stale-state balance corruption and deadlocks.
 - Transfers require two wallets owned by the same user and using the same
   currency.
 - Wallet currency becomes immutable after creation.
@@ -252,9 +255,10 @@ Run the complete suite in Docker:
 docker compose run --rm web python -m pytest
 ```
 
-Current result: **135 passing tests with 92% total coverage**. The suite covers authentication
-boundaries, balance recalculation, insufficient funds, cross-user access,
-currency rules, budgets, reports, and protected deletion.
+Current result: **141 passing tests with 92% total coverage**. The suite covers
+authentication boundaries, balance recalculation, insufficient funds,
+cross-user access, currency rules, budgets, reports, protected deletion, and
+concurrent balance changes using independent PostgreSQL connections.
 
 Run line and branch coverage:
 
@@ -263,7 +267,9 @@ docker compose run --rm web coverage run -m pytest
 docker compose run --rm web coverage report
 ```
 
-CI reports current coverage alongside the PostgreSQL-backed test run. Local quality checks:
+CI enforces the existing 85% coverage threshold, uploads `coverage.xml`, audits
+dependencies for known vulnerabilities, and checks for missing migrations.
+Local quality checks:
 
 ```bash
 ruff check .
