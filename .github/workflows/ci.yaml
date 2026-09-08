@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -49,7 +53,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff
+          pip install pip-audit ruff
+
+      - name: Audit dependencies
+        run: pip-audit -r requirements.txt
 
       - name: Check code quality
         run: |
@@ -57,9 +64,26 @@ jobs:
           ruff format --check .
 
       - name: Run Django checks
-        run: python manage.py check
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
 
       - name: Run tests
         run: |
           coverage run -m pytest
           coverage report
+          coverage xml -o coverage.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage.xml
+          if-no-files-found: error
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage.xml
+          use_oidc: true
+          fail_ci_if_error: true

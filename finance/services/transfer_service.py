@@ -17,16 +17,16 @@ class TransferService:
         unlocked_to_wallet = validated_data["to_wallet"]
         amount = validated_data["amount"]
 
-        wallet_ids = sorted(
-            [
-                unlocked_from_wallet.id,
-                unlocked_to_wallet.id,
-            ]
-        )
+        wallet_ids = {
+            unlocked_from_wallet.id,
+            unlocked_to_wallet.id,
+        }
 
         wallets = {
             wallet.id: wallet
-            for wallet in Wallet.objects.select_for_update().filter(id__in=wallet_ids)
+            for wallet in Wallet.objects.select_for_update()
+            .filter(id__in=wallet_ids)
+            .order_by("id")
         }
 
         from_wallet = wallets[unlocked_from_wallet.id]
