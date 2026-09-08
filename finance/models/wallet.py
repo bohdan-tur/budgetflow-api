@@ -34,10 +34,14 @@ class Wallet(models.Model):
 
     class Meta:
         constraints = [
+            models.CheckConstraint(
+                condition=models.Q(balance__gte=Decimal("0.00")),
+                name="wallet_balance_non_negative",
+            ),
             models.UniqueConstraint(
                 fields=["user", "name"],
                 name="unique_wallet_name_per_user",
-            )
+            ),
         ]
         ordering = ["name"]
 
