@@ -3,7 +3,7 @@ from typing import Any
 
 from django.db import transaction
 from django.db.models import F
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
 from finance.models.category import Category
 from finance.models.choices import CategoryType
@@ -53,25 +53,40 @@ class TransactionService:
         instance: Transaction,
         validated_data: dict[str, Any],
     ) -> Transaction:
-        old_wallet = Wallet.objects.select_for_update().get(id=instance.wallet_id)
+        try:
+            locked_transaction = (
+                Transaction.objects.select_for_update(of=("self",))
+                .select_related("wallet", "category")
+                .get(id=instance.id)
+            )
+        except Transaction.DoesNotExist:
+            raise NotFound("Transaction no longer exists.") from None
 
         old_delta = TransactionService._get_delta(
-            instance.category,
-            instance.amount,
+            locked_transaction.category,
+            locked_transaction.amount,
         )
-        old_wallet_id = instance.wallet_id
+        old_wallet_id = locked_transaction.wallet_id
 
-        new_wallet_id = validated_data.get("wallet", instance.wallet).id
-        new_category = validated_data.get("category", instance.category)
-        new_amount = validated_data.get("amount", instance.amount)
+        new_wallet_id = validated_data.get("wallet", locked_transaction.wallet).id
+        new_category = validated_data.get("category", locked_transaction.category)
+        new_amount = validated_data.get("amount", locked_transaction.amount)
         new_delta = TransactionService._get_delta(new_category, new_amount)
+
+        wallets = {
+            wallet.id: wallet
+            for wallet in Wallet.objects.select_for_update()
+            .filter(id__in={old_wallet_id, new_wallet_id})
+            .order_by("id")
+        }
+        old_wallet = wallets[old_wallet_id]
+        new_wallet = wallets[new_wallet_id]
 
         if old_wallet_id == new_wallet_id:
             net_delta = new_delta - old_delta
             if old_wallet.balance + net_delta < Decimal("0.00"):
                 raise ValidationError("Insufficient funds in the wallet after update.")
         else:
-            new_wallet = Wallet.objects.select_for_update().get(id=new_wallet_id)
             if old_wallet.balance - old_delta < Decimal("0.00"):
                 raise ValidationError(
                     "Insufficient funds in the old wallet to revert transaction."
@@ -80,32 +95,40 @@ class TransactionService:
                 raise ValidationError("Insufficient funds in the target wallet.")
 
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            setattr(locked_transaction, attr, value)
 
         if validated_data:
-            instance.save(update_fields=list(validated_data.keys()))
+            locked_transaction.save(update_fields=list(validated_data.keys()))
 
-        if old_wallet_id == instance.wallet_id:
+        if old_wallet_id == locked_transaction.wallet_id:
             net_delta = new_delta - old_delta
             old_wallet.balance += net_delta
             old_wallet.save(update_fields=["balance"])
         else:
-            new_wallet = Wallet.objects.select_for_update().get(id=instance.wallet_id)
             old_wallet.balance -= old_delta
             old_wallet.save(update_fields=["balance"])
             new_wallet.balance += new_delta
             new_wallet.save(update_fields=["balance"])
 
-        return instance
+        return locked_transaction
 
     @staticmethod
     @transaction.atomic
     def destroy(*, instance: Transaction) -> None:
-        wallet = Wallet.objects.select_for_update().get(id=instance.wallet_id)
+        try:
+            locked_transaction = (
+                Transaction.objects.select_for_update(of=("self",))
+                .select_related("category")
+                .get(id=instance.id)
+            )
+        except Transaction.DoesNotExist:
+            raise NotFound("Transaction no longer exists.") from None
+
+        wallet = Wallet.objects.select_for_update().get(id=locked_transaction.wallet_id)
 
         delta = TransactionService._get_delta(
-            instance.category,
-            instance.amount,
+            locked_transaction.category,
+            locked_transaction.amount,
         )
 
         if wallet.balance - delta < Decimal("0.00"):
@@ -113,4 +136,4 @@ class TransactionService:
 
         wallet.balance -= delta
         wallet.save(update_fields=["balance"])
-        instance.delete()
+        locked_transaction.delete()
